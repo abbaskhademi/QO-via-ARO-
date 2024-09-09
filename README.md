@@ -25,11 +25,11 @@ The following is a guide for using this repository. Please be aware that all dat
 
 
 # End note
-We are grateful for your interest in our work. Please feel free to reach out to Abbas Khademi (mailto:abbaskhademi@ut.ac.ir ) if you encounter any issues while using the scripts. If you have any other comments or questions, do not hesitate to contact us:
+We are grateful for your interest in our work. Please feel free to reach out to Abbas Khademi (abbaskhademi@ut.ac.ir ) if you encounter any issues while using the scripts. If you have any other comments or questions, do not hesitate to contact us:
 
-A. Khademi: mailto:abbaskhademi@ut.ac.ir 
+A. Khademi: abbaskhademi@ut.ac.ir 
 
-A. Marandi: mailto:a.marandi@tue.nl 
+A. Marandi: a.marandi@tue.nl 
 
 If you found this work useful in your research and/or applications, please star this repository and cite:
 
