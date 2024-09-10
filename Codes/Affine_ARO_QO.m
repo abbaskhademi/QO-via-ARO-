@@ -34,21 +34,21 @@ warning off
 yalmip clear;
 % Decision variables
 tau = sdpvar;
-w = sdpvar(m,1);
-W = sdpvar(m,n);
+z = sdpvar(m,1);
+Z = sdpvar(m,n);
 v = sdpvar(m,1);
 V = sdpvar(m,n);
 %
 Constraints = [];
-Constraints = Constraints + [b'*v+b'*w>=tau, A'*v<= (0.5*c'+b'*W)'];
-DD=A'*V-(Q-W'*A); 
-Constraints = Constraints + [V'*b-A'*w>=-0.5*c, DD(:)<= 0]; 
+Constraints = Constraints + [b'*v+b'*z>=tau, A'*v<= (0.5*c'+b'*Z)'];
+DD=A'*V-(Q-Z'*A); 
+Constraints = Constraints + [V'*b-A'*z>=-0.5*c, DD(:)<= 0]; 
 options = sdpsettings('solver', 'mosek','verbose',0,'mosek.MSK_DPAR_OPTIMIZER_MAX_TIME', 3000);
 sol = optimize(Constraints, -tau, options);
 disp(yalmiperror(sol.problem));
 Time_LB = sol.solvertime;  
 LB=value(tau);
-W=value(W);
+Z=value(Z);
 
 fprintf('LB Time: %s\n', mat2str(Time_LB));
 %% 
@@ -59,7 +59,7 @@ Scenario = [];
 for i = 1:n
     clear('yalmip');
     x = sdpvar(n, 1);  
-    q = Q-A'*W;
+    q = Q-A'*Z;
     qi=q(i,:);
     P1 = optimize([A*x == b, x >= 0], qi * x, sdpsettings('verbose', 0, 'solver', 'mosek'));
     x = value(x);
@@ -69,7 +69,7 @@ for i = 1:n
 end
 clear('yalmip');
 x = sdpvar(n, 1);  
-P0 = optimize([A*x == b, x >= 0], (0.5*c'+b'*W)* x, sdpsettings('verbose', 0, 'solver', 'mosek'));
+P0 = optimize([A*x == b, x >= 0], (0.5*c'+b'*Z)* x, sdpsettings('verbose', 0, 'solver', 'mosek'));
 x = value(x);
 Scenario =[Scenario, x];
 Time = Time + P0.solvertime; % Solver time for each scenario
