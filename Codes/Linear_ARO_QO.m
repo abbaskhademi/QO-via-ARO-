@@ -34,16 +34,14 @@ warning off
 scenario_value = [];
 Time = 0;
 Scenario = [];
-Qx=[];
+Qx = [];
 for k = 1:n
     clear('yalmip');
     x = sdpvar(n, 1);  
-    q = Q(k, :);
-    P1 = optimize([A*x == b, x >= 0], q * x, sdpsettings('verbose',0, 'solver', 'mosek'));
+    P1 = optimize([A*x == b, x >= 0], Q(k,:)* x, sdpsettings('verbose',0, 'solver', 'mosek'));
     x = value(x);
-    cx=c'*x;
     Scenario =[Scenario, x];
-    Qx=[Qx; q*x];
+    Qx = [Qx; Q(k,:)*x];
     Time = Time + P1.solvertime; % Solver time for finding each scenario 
     scenario_value=[scenario_value,  (x')*Q*x + c'*x];
 end
@@ -51,9 +49,10 @@ clear('yalmip');
 x = sdpvar(n, 1);  
 P1 = optimize([A*x == b, x >= 0], 0.5*c'*x, sdpsettings('verbose',0, 'solver', 'mosek'));
 x = value(x);
-Scenario=[Scenario, x];
+cx = c'*x;
+Scenario = [Scenario, x];
 Time = Time + P1.solvertime;  % Total time to reach scenarios 
-scenario_value=[scenario_value,  (x')*Q*x + c'*x];
+scenario_value=[scenario_value, (x')*Q*x + c'*x];
 % 
 
 %% Optimization for lower bound
@@ -63,15 +62,10 @@ w = sdpvar(m, 1);
 Cons = [];
 Cons = [Cons, 0.5*cx + b'*w >= tau, -A'*w + Qx >= -0.5*c];
 sol=optimize(Cons, -tau, sdpsettings('verbose', 0, 'solver', 'mosek'));
-if sol.problem ~= 0
-    disp("Error in optimization:");
-    yalmiperror(sol.problem)
-else
-    Time_LB = sol.solvertime;
-    Time = sol.solvertime + Time;
-    LB = value(tau);
+Time_LB = sol.solvertime;
+Time = sol.solvertime + Time;
+LB = value(tau);
   
-end
 
 %% Finding the best scenario as initial point
 [UB0, k] = sort(scenario_value);
@@ -97,7 +91,7 @@ function [x_end, UB_end, MCP_time] = Mountain_Climbing_Procedure(Q, A, b, c, x_0
 % Mountain Climbing Procedure (MCP) based on Bi_QO: Improve the initial solution
 
 %____________Bi_QO Problem Definitio_________________________%
-% min  0.5(x' Qplus x + c'x + y' Qplus y + c'y)+ x' Qminus y %
+% min  0.5(x' Qplus x+c'x + y' Qplus y+c'y)+ x' Qminus y     %
 % s.t.      Ax = b, x >= 0,                                  %
 %           Ay = b, y >= 0.                                  %
 %____________________________________________________________%
@@ -115,7 +109,7 @@ function [x_end, UB_end, MCP_time] = Mountain_Climbing_Procedure(Q, A, b, c, x_0
 % MCP_time- Total solver computation time.                                %
 %=========================================================================%
 
-%%Representation: Q = Qplus + Qminus, where Qplus & -Qminus are Positive Definite
+%%Representation: Q = Qplus + Qminus, where (Qplus) & (-Qminus) are Positive Definite
 [Qplus, Qminus] = Representation_2(Q);
 % Requirements: Yalmip & Mosek
 
@@ -145,14 +139,29 @@ end
 end
 
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%_________________________________________________________________________%
+function [Qplus, Qminus] = Representation_1(Q)
+n = size(Q,2);
+I = eye(n);
+eps = 0.00001;
+Qplus = Q - ((min(eig(Q)) - eps) * I); 
+Qminus = (min(eig(Q)) - eps) * I;
+end
+%_________________________________________________________________________%
+function [Qplus, Qminus] = Representation_2(Q)
+n = size(Q,2);
+I = eye(n);
+eps = 0.00001;
+Qplus = ((max(eig(Q)) + eps) * I);
+Qminus = Q - Qplus;
+end
+%_________________________________________________________________________%
 function [Qplus, Qminus] = Representation_3(Q)
 n = size(Q,2);
 [V,D] = eig(Q);
 V = real(V); D = real(D);
 [~,ind] = sort(diag(D), 'descend');
-k = sum(diag(D)>=0); %number of nonzero elements
+k = sum(diag(D)>=0); 
 D = D(ind,ind);
 V  = V(:,ind);
 eps = 0.00001;
@@ -168,17 +177,4 @@ D_minus = D_minus+(eye(n)*eps);
 Qplus = V*D_plus*V';
 Qminus = -V*D_minus*V';
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [Qplus, Qminus] = Representation_2(Q)
-n = size(Q,2);
-I = eye(n);
-Qplus = ((max(eig(Q)) + 0.00001) * I);
-Qminus = Q - Qplus;
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [Qplus, Qminus] = Representation_1(Q)
-n = size(Q,2);
-I = eye(n);
-Qplus = Q - ((min(eig(Q)) - 0.00001) * I); 
-Qminus = (min(eig(Q)) - 0.00001) * I;
-end
+%_________________________________________________________________________%
