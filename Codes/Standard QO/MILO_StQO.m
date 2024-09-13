@@ -37,7 +37,7 @@ Constraints = [Constraints, x >= 0, z >= 0];            % Non-negativity constra
 Objective = alpha;
 
 % Set up options and solve
-options = sdpsettings('verbose', 0, 'solver', 'gurobi', 'gurobi.TimeLimit',max([3000,0]),'savesolveroutput',1);
+options = sdpsettings('verbose', 0, 'solver', 'gurobi', 'gurobi.TimeLimit',3000,'savesolveroutput',1);
 sol = optimize(Constraints, Objective, options);
 % Check and display results
  x_value = value(x);
